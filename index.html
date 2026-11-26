@@ -68,6 +68,11 @@ ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px
 .big-img{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:24px;z-index:20}
 .big-img img{max-height:90vh;border-radius:12px}
 footer{color:var(--muted);font-size:.8rem;display:flex;flex-direction:column;gap:10px}
+.lang{display:flex;gap:6px;margin-top:8px}
+.lang button{flex:1;font:inherit;font-weight:700;min-height:44px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--muted);cursor:pointer}
+.lang button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.jp-link{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px;border-radius:12px;border:1px solid var(--gold);background:var(--pick);color:var(--ink);text-decoration:none;font-weight:700}
+.jp-link span{font-weight:400;color:var(--muted);font-size:.85rem}
 </style>
 </head>
 <body>
@@ -77,6 +82,10 @@ footer{color:var(--muted);font-size:.8rem;display:flex;flex-direction:column;gap
     <div class="total num" id="totalVal">$0.00</div>
     <div class="sub" id="totalSub">האוסף ריק</div>
     <div class="sub" id="pricesMeta">טוען מחירים…</div>
+    <div class="lang" role="group" aria-label="שפת הקלף">
+      <button type="button" id="langEn" aria-pressed="true">🇺🇸 אנגלית</button>
+      <button type="button" id="langJp" aria-pressed="false">🇯🇵 יפנית</button>
+    </div>
   </header>
 
   <section class="panel" aria-labelledby="scanH">
@@ -126,6 +135,21 @@ footer{color:var(--muted);font-size:.8rem;display:flex;flex-direction:column;gap
   const fmt = n => "$" + (Number(n)||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
   let byKey = new Map(), byCode = new Map(), loaded = false;
   let items = load();
+  let lang = "en";
+  try{ if(localStorage.getItem("op-lang")==="jp") lang="jp" }catch(e){}
+  const yuyuUrl = code => "https://yuyu-tei.jp/sell/opc/s/search?search_word=" + encodeURIComponent(code);
+  function jpLink(code){
+    const a=el("a","jp-link"); a.href=yuyuUrl(code); a.target="_blank"; a.rel="noopener";
+    const t=el("div",null,"מחיר יפני ב-Yuyu-tei ↗"); t.append(el("span",null," · "+code+" · ביין"));
+    a.append(t); return a;
+  }
+  function setLang(l){
+    lang=l; try{localStorage.setItem("op-lang",l)}catch(e){}
+    $("langEn").setAttribute("aria-pressed",String(l==="en")); $("langJp").setAttribute("aria-pressed",String(l==="jp"));
+    const c=normCode($("codeIn").value); if(c && $("results").childElementCount) showVariants(c);
+  }
+  $("langEn").onclick=()=>setLang("en"); $("langJp").onclick=()=>setLang("jp");
+  $("langEn").setAttribute("aria-pressed",String(lang==="en")); $("langJp").setAttribute("aria-pressed",String(lang==="jp"));
 
   function load(){try{const v=JSON.parse(localStorage.getItem(STORE)||"[]");return Array.isArray(v)?v:[]}catch(e){return []}}
   function save(){try{localStorage.setItem(STORE,JSON.stringify(items))}catch(e){status("backupStatus","השמירה במכשיר נכשלה. בדוק שהדפדפן לא במצב פרטי.",true)}}
@@ -158,16 +182,28 @@ footer{color:var(--muted);font-size:.8rem;display:flex;flex-direction:column;gap
     const list=$("results"); list.textContent="";
     if(!loaded){status("searchStatus","המחירים עוד נטענים. נסה שוב בעוד רגע.");return}
     const v=byCode.get(code)||[];
-    if(!v.length){status("searchStatus",'לא מצאתי את הקוד "'+code+'". בדוק שהוא נכון (למשל OP02-004). קלפי פרומו עדיין לא ברשימה.',true);return}
-    status("searchStatus", v.length===1?"נמצאה גרסה אחת.":"יש "+v.length+" גרסאות. בחר את זו שנראית כמו הקלף שלך (לחיצה על תמונה מגדילה).");
+    const jp = lang==="jp";
+    if(jp){ const li=el("li"); li.append(jpLink(code)); list.append(li); }
+    if(!v.length){
+      if(jp){
+        status("searchStatus",'הקלף "'+code+'" לא נמצא ברשימה האנגלית. אפשר לראות את המחיר ב-Yuyu-tei, ולהוסיף אותו לאוסף בלי מחיר.');
+        const li=el("li","item"); const acts=el("div","acts"); const add=el("button","btn primary","הוסף לאוסף (יפני)"); add.type="button";
+        add.onclick=()=>{addCard({k:"code:"+code,c:code,n:code,s:"",r:"",p:0,i:""},true);add.textContent="✓ נוסף";setTimeout(()=>{add.textContent="הוסף לאוסף (יפני)"},1400)};
+        acts.append(add); li.append(el("div","name",code),acts); list.append(li);
+        return;
+      }
+      status("searchStatus",'לא מצאתי את הקוד "'+code+'". בדוק שהוא נכון (למשל OP02-004). קלפי פרומו עדיין לא ברשימה.',true);return
+    }
+    status("searchStatus", jp ? "קלף יפני: המחיר ביין נמצא ב-Yuyu-tei. למטה הגרסאות, כדי לזהות ולהוסיף לאוסף." : (v.length===1?"נמצאה גרסה אחת.":"יש "+v.length+" גרסאות. בחר את זו שנראית כמו הקלף שלך (לחיצה על תמונה מגדילה)."));
     for(const r of v){
       const li=el("li","item");
       const info=el("div","info"); info.append(document.createTextNode(r.s+" · ")); info.append(el("span","tag",r.r||"?"));
       if(daysOld(r.d)>7){info.append(document.createTextNode(" "));info.append(el("span","stale","מחיר מ-"+r.d))}
-      const acts=el("div","acts"); const add=el("button","btn primary","הוסף לאוסף"); add.type="button";
-      add.onclick=()=>{addCard(r);add.textContent="✓ נוסף";setTimeout(()=>{add.textContent="הוסף לאוסף"},1400)};
+      const label = jp ? "הוסף לאוסף (יפני)" : "הוסף לאוסף";
+      const acts=el("div","acts"); const add=el("button","btn primary",label); add.type="button";
+      add.onclick=()=>{addCard(r,jp);add.textContent="✓ נוסף";setTimeout(()=>{add.textContent=label},1400)};
       acts.append(add);
-      li.append(thumb(r.i,r.n),el("div","name",r.n),el("div","price num",fmt(r.p)),info,acts);
+      li.append(thumb(r.i,r.n),el("div","name",r.n),el("div","price num",jp?"":fmt(r.p)),info,acts);
       list.append(li);
     }
   }
@@ -209,34 +245,36 @@ footer{color:var(--muted);font-size:.8rem;display:flex;flex-direction:column;gap
   });
 
   // ---------- collection ----------
-  function priceOf(it){const r=byKey.get(it.key);return r?Number(r.p)||0:Number(it.priceAtAdd)||0}
-  function addCard(r){
-    const ex=items.find(x=>x.key===r.k);
+  function priceOf(it){if(it.lang==="jp")return 0;const r=byKey.get(it.key);return r?Number(r.p)||0:Number(it.priceAtAdd)||0}
+  function addCard(r,jp){
+    const ex=items.find(x=>x.key===r.k && (x.lang==="jp")===!!jp);
     if(ex) ex.qty=(Number(ex.qty)||1)+1;
-    else items.push({key:r.k,code:r.c,name:r.n,set:r.s,rarity:r.r,img:r.i,qty:1,priceAtAdd:r.p,addedAt:new Date().toISOString()});
+    else items.push({key:r.k,code:r.c,name:r.n,set:r.s,rarity:r.r,img:r.i,qty:1,priceAtAdd:jp?0:r.p,lang:jp?"jp":"en",addedAt:new Date().toISOString()});
     save(); renderList();
   }
   function changeQty(it,d){it.qty=(Number(it.qty)||1)+d;if(it.qty<=0)items=items.filter(x=>x!==it);save();renderList()}
   function renderList(){
-    const list=$("list"); list.textContent=""; let total=0,count=0;
+    const list=$("list"); list.textContent=""; let total=0,count=0,jpCount=0;
     const rows=items.map(it=>({it,p:priceOf(it)})).sort((a,b)=>b.p*(b.it.qty||1)-a.p*(a.it.qty||1));
     for(const {it,p} of rows){
-      const q=Number(it.qty)||1; total+=p*q; count+=q;
+      const q=Number(it.qty)||1; const isJp=it.lang==="jp"; total+=p*q; count+=q; if(isJp) jpCount+=q;
       const r=byKey.get(it.key);
       const li=el("li","item small");
-      const info=el("div","info"); info.append(document.createTextNode(String(it.code||"")+" · "+String(it.set||"")+" · "));
-      info.append(el("span","tag",String(it.rarity||"?"))); info.append(document.createTextNode(" · "+fmt(p)+" ליחידה"));
-      if(loaded&&!r) info.append(el("span","stale"," · אין מחיר עדכני"));
+      const info=el("div","info"); info.append(document.createTextNode((isJp?"🇯🇵 ":"🇺🇸 ")+String(it.code||"")+(it.set?" · "+String(it.set):"")+" · "));
+      info.append(el("span","tag",String(it.rarity||"?")));
+      if(isJp){ info.append(document.createTextNode(" · ")); const a=el("a",null,"מחיר ב-Yuyu-tei ↗"); a.href=yuyuUrl(String(it.code||"")); a.target="_blank"; a.rel="noopener"; a.style.color="inherit"; info.append(a); }
+      else info.append(document.createTextNode(" · "+fmt(p)+" ליחידה"));
+      if(loaded&&!r&&!isJp) info.append(el("span","stale"," · אין מחיר עדכני"));
       const acts=el("div","acts"), qty=el("span","qty");
       const minus=el("button","btn","−"); minus.type="button"; minus.setAttribute("aria-label","הורד אחד"); minus.onclick=()=>changeQty(it,-1);
       const plus=el("button","btn","+"); plus.type="button"; plus.setAttribute("aria-label","הוסף אחד"); plus.onclick=()=>changeQty(it,1);
       qty.append(minus,el("span","num","×"+q),plus); acts.append(qty);
-      li.append(thumb((r&&r.i)||it.img,it.name),el("div","name",String(it.name||"")),el("div","price num",fmt(p*q)),info,acts);
+      li.append(thumb((r&&r.i)||it.img,it.name),el("div","name",String(it.name||"")),el("div","price num",isJp?"":fmt(p*q)),info,acts);
       list.append(li);
     }
     if(!rows.length) list.append(el("li","empty","כאן יופיעו הקלפים שתוסיף. צלם קלף או הקלד קוד כדי להתחיל."));
     $("totalVal").textContent=fmt(total);
-    $("totalSub").textContent=count?(count+" קלפים · "+rows.length+" שונים"):"האוסף ריק";
+    $("totalSub").textContent=count?(count+" קלפים · "+rows.length+" שונים"+(jpCount?" · "+jpCount+" יפניים לא נכללים בשווי":"")):"האוסף ריק";
   }
 
   // ---------- backup ----------
