@@ -138,10 +138,17 @@ footer{color:var(--muted);font-size:.8rem;display:flex;flex-direction:column;gap
   let lang = "en";
   try{ if(localStorage.getItem("op-lang")==="jp") lang="jp" }catch(e){}
   const yuyuUrl = code => "https://yuyu-tei.jp/sell/opc/s/search?search_word=" + encodeURIComponent(code);
-  function jpLink(code){
-    const a=el("a","jp-link"); a.href=yuyuUrl(code); a.target="_blank"; a.rel="noopener";
-    const t=el("div",null,"מחיר יפני ב-Yuyu-tei ↗"); t.append(el("span",null," · "+code+" · ביין"));
+  const pcUrl = code => "https://www.pricecharting.com/search-products?type=prices&q=" + encodeURIComponent(code + " japanese");
+  function linkBox(href, title, note){
+    const a=el("a","jp-link"); a.href=href; a.target="_blank"; a.rel="noopener";
+    const t=el("div",null,title); t.append(el("span",null," · "+note));
     a.append(t); return a;
+  }
+  function jpLink(code){
+    const box=el("div"); box.style.display="flex"; box.style.flexDirection="column"; box.style.gap="8px";
+    box.append(linkBox(pcUrl(code),"מחיר מערבי ב-PriceCharting ↗",code+" · בדולרים, לפי eBay"));
+    box.append(linkBox(yuyuUrl(code),"מחיר ביפן ב-Yuyu-tei ↗",code+" · ביין"));
+    return box;
   }
   function setLang(l){
     lang=l; try{localStorage.setItem("op-lang",l)}catch(e){}
@@ -186,7 +193,7 @@ footer{color:var(--muted);font-size:.8rem;display:flex;flex-direction:column;gap
     if(jp){ const li=el("li"); li.append(jpLink(code)); list.append(li); }
     if(!v.length){
       if(jp){
-        status("searchStatus",'הקלף "'+code+'" לא נמצא ברשימה האנגלית. אפשר לראות את המחיר ב-Yuyu-tei, ולהוסיף אותו לאוסף בלי מחיר.');
+        status("searchStatus",'הקלף "'+code+'" לא נמצא ברשימה האנגלית. המחירים בקישורים למעלה, ואפשר להוסיף אותו לאוסף בלי מחיר.');
         const li=el("li","item"); const acts=el("div","acts"); const add=el("button","btn primary","הוסף לאוסף (יפני)"); add.type="button";
         add.onclick=()=>{addCard({k:"code:"+code,c:code,n:code,s:"",r:"",p:0,i:""},true);add.textContent="✓ נוסף";setTimeout(()=>{add.textContent="הוסף לאוסף (יפני)"},1400)};
         acts.append(add); li.append(el("div","name",code),acts); list.append(li);
@@ -194,7 +201,7 @@ footer{color:var(--muted);font-size:.8rem;display:flex;flex-direction:column;gap
       }
       status("searchStatus",'לא מצאתי את הקוד "'+code+'". בדוק שהוא נכון (למשל OP02-004). קלפי פרומו עדיין לא ברשימה.',true);return
     }
-    status("searchStatus", jp ? "קלף יפני: המחיר ביין נמצא ב-Yuyu-tei. למטה הגרסאות, כדי לזהות ולהוסיף לאוסף." : (v.length===1?"נמצאה גרסה אחת.":"יש "+v.length+" גרסאות. בחר את זו שנראית כמו הקלף שלך (לחיצה על תמונה מגדילה)."));
+    status("searchStatus", jp ? "קלף יפני: המחירים בקישורים למעלה. למטה הגרסאות, כדי לזהות ולהוסיף לאוסף." : (v.length===1?"נמצאה גרסה אחת.":"יש "+v.length+" גרסאות. בחר את זו שנראית כמו הקלף שלך (לחיצה על תמונה מגדילה)."));
     for(const r of v){
       const li=el("li","item");
       const info=el("div","info"); info.append(document.createTextNode(r.s+" · ")); info.append(el("span","tag",r.r||"?"));
@@ -262,7 +269,10 @@ footer{color:var(--muted);font-size:.8rem;display:flex;flex-direction:column;gap
       const li=el("li","item small");
       const info=el("div","info"); info.append(document.createTextNode((isJp?"🇯🇵 ":"🇺🇸 ")+String(it.code||"")+(it.set?" · "+String(it.set):"")+" · "));
       info.append(el("span","tag",String(it.rarity||"?")));
-      if(isJp){ info.append(document.createTextNode(" · ")); const a=el("a",null,"מחיר ב-Yuyu-tei ↗"); a.href=yuyuUrl(String(it.code||"")); a.target="_blank"; a.rel="noopener"; a.style.color="inherit"; info.append(a); }
+      if(isJp){
+        const mk=(t,h)=>{const a=el("a",null,t); a.href=h; a.target="_blank"; a.rel="noopener"; a.style.color="inherit"; return a};
+        info.append(document.createTextNode(" · "), mk("מחיר מערבי ↗",pcUrl(String(it.code||""))), document.createTextNode(" · "), mk("ביפן ↗",yuyuUrl(String(it.code||""))));
+      }
       else info.append(document.createTextNode(" · "+fmt(p)+" ליחידה"));
       if(loaded&&!r&&!isJp) info.append(el("span","stale"," · אין מחיר עדכני"));
       const acts=el("div","acts"), qty=el("span","qty");
