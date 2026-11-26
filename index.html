@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>אוסף וואן פיס</title>
+<meta name="theme-color" content="#14202e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="אוסף OP">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&family=Rubik:wght@600;800&display=swap">
+<style>
+/* One narrow column for a phone held in one hand: value up top, camera button, results, then the collection. */
+:root{
+  --bg:#f3f5f8; --surface:#ffffff; --ink:#14202e; --muted:#5b6878; --line:#dde3ea;
+  --accent:#b8322a; --accent-ink:#ffffff; --gold:#b07d12; --pick:#fff4d6;
+  --display:"Rubik","Heebo",system-ui,sans-serif; --body:"Heebo",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#0f1620; --surface:#18222f; --ink:#e8edf3; --muted:#97a4b4; --line:#2a3646;
+  --accent:#e0574d; --accent-ink:#140b0a; --gold:#e3b04b; --pick:#2e2814; color-scheme:dark}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;-webkit-text-size-adjust:100%}
+img{max-width:100%}
+.wrap{max-width:560px;margin:0 auto;padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:20px}
+h1,h2{font-family:var(--display);margin:0;text-wrap:balance}
+h1{font-size:1.1rem;font-weight:600;color:var(--muted);letter-spacing:.02em}
+h2{font-size:1.25rem;font-weight:800}
+.num{font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate}
+header{display:flex;flex-direction:column;gap:4px}
+.total{font-family:var(--display);font-weight:800;font-size:2.6rem;line-height:1.1}
+.sub{color:var(--muted);font-size:.95rem}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:14px}
+.btn{font:inherit;font-weight:700;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:10px 14px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;text-decoration:none}
+.btn:focus-visible,input:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.big{font-size:1.2rem;padding:16px;width:100%}
+.btn:disabled{opacity:.55;cursor:default}
+.btn svg{width:24px;height:24px;flex:none}
+label.lbl{font-size:.9rem;color:var(--muted)}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row input{flex:1;min-width:0}
+input[type=text]{font:inherit;font-size:1.1rem;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);letter-spacing:.04em}
+#photoBox{display:flex;gap:12px;align-items:flex-start}
+#photoImg{width:96px;border-radius:8px;border:1px solid var(--line);flex:none}
+.status{font-size:.95rem;color:var(--muted);margin:0}
+.status.err{color:var(--accent)}
+ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.item{display:grid;grid-template-columns:auto 1fr auto;gap:4px 12px;align-items:start;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.item.pick{background:var(--pick);border-color:var(--gold)}
+.thumb{grid-row:1 / span 3;width:84px;aspect-ratio:600/838;border-radius:6px;background:var(--bg);object-fit:cover;border:1px solid var(--line)}
+.item.small .thumb{width:56px}
+.item .name{font-weight:700;min-width:0;overflow-wrap:anywhere}
+.item .info{grid-column:2 / -1;color:var(--muted);font-size:.88rem;min-width:0}
+.item .price{font-weight:700;font-size:1.15rem;text-align:left}
+.item .acts{grid-column:2 / -1;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tag{display:inline-block;font-size:.75rem;font-weight:700;letter-spacing:.04em;padding:1px 7px;border-radius:99px;border:1px solid var(--gold);color:var(--gold)}
+.stale{color:var(--gold);font-size:.8rem}
+.qty{display:inline-flex;align-items:center;gap:6px}
+.qty .btn{min-height:36px;min-width:40px;padding:4px 10px}
+.empty{color:var(--muted);text-align:center;padding:20px 8px;border:1px dashed var(--line);border-radius:12px;display:block}
+.big-img{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:24px;z-index:20}
+.big-img img{max-height:90vh;border-radius:12px}
+footer{color:var(--muted);font-size:.8rem;display:flex;flex-direction:column;gap:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>אוסף וואן פיס · שווי כולל</h1>
+    <div class="total num" id="totalVal">$0.00</div>
+    <div class="sub" id="totalSub">האוסף ריק</div>
+    <div class="sub" id="pricesMeta">טוען מחירים…</div>
+  </header>
+
+  <section class="panel" aria-labelledby="scanH">
+    <h2 id="scanH">הוספת קלף</h2>
+    <label class="btn primary big" for="photo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+      צלם קלף
+    </label>
+    <input type="file" id="photo" accept="image/*" capture="environment" hidden>
+    <div id="photoBox" hidden>
+      <img id="photoImg" alt="הקלף שצילמת">
+      <p class="status" id="ocrStatus"></p>
+    </div>
+    <form id="codeForm" autocomplete="off">
+      <label class="lbl" for="codeIn">קוד הקלף (בפינה התחתונה, למשל OP02-004)</label>
+      <div class="row">
+        <input type="text" id="codeIn" dir="ltr" placeholder="OP02-004" autocapitalize="characters" spellcheck="false">
+        <button class="btn" type="submit">חפש</button>
+      </div>
+    </form>
+    <p class="status" id="searchStatus" hidden></p>
+    <ul id="results"></ul>
+  </section>
+
+  <section class="panel" aria-labelledby="colH">
+    <h2 id="colH">האוסף שלי</h2>
+    <ul id="list"></ul>
+  </section>
+
+  <footer>
+    <div class="row">
+      <button class="btn" id="exportBtn" type="button">גיבוי האוסף לקובץ</button>
+      <label class="btn" for="importIn">שחזור מקובץ</label>
+      <input type="file" id="importIn" accept="application/json,.json" hidden>
+    </div>
+    <p class="status" id="backupStatus" hidden></p>
+    <span>מחיר שוק בדולרים (TCGplayer), דרך optcgapi.com. מתעדכן אוטומטית כל יום. מחיר מסומן בצהוב אם הוא ישן משבוע. האוסף נשמר רק במכשיר הזה, לכן כדאי לגבות מדי פעם.</span>
+  </footer>
+</div>
+<div class="big-img" id="bigImg" hidden><img alt=""></div>
+
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const STORE = "op-collection-v1";
+  const fmt = n => "$" + (Number(n)||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+  let byKey = new Map(), byCode = new Map(), loaded = false;
+  let items = load();
+
+  function load(){try{const v=JSON.parse(localStorage.getItem(STORE)||"[]");return Array.isArray(v)?v:[]}catch(e){return []}}
+  function save(){try{localStorage.setItem(STORE,JSON.stringify(items))}catch(e){status("backupStatus","השמירה במכשיר נכשלה. בדוק שהדפדפן לא במצב פרטי.",true)}}
+  function normCode(s){
+    const t=String(s||"").toUpperCase().replace(/[\s_]/g,"");
+    const m=t.match(/^([A-Z]{2,3})(\d{1,2})-?(\d{1,3})$/);
+    return m ? m[1]+m[2].padStart(2,"0")+"-"+m[3].padStart(3,"0") : t;
+  }
+  function daysOld(d){const t=Date.parse(d);return isNaN(t)?0:Math.floor((Date.now()-t)/864e5)}
+  function el(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e}
+  function status(id,t,err){const n=$(id);n.hidden=!t;n.textContent=t||"";n.classList.toggle("err",!!err)}
+  function thumb(src,alt){
+    const img=el("img","thumb"); img.alt=alt||""; img.loading="lazy"; img.decoding="async";
+    if(/^https:\/\//.test(src||"")){img.src=src;img.onclick=()=>{const b=$("bigImg");b.querySelector("img").src=src;b.hidden=false}}
+    return img;
+  }
+  $("bigImg").onclick=()=>{$("bigImg").hidden=true};
+
+  // ---------- prices ----------
+  fetch("data/prices.json",{cache:"no-cache"}).then(r=>{if(!r.ok)throw 0;return r.json()}).then(j=>{
+    for(const r of j.cards){byKey.set(r.k,r);const a=byCode.get(r.c)||[];a.push(r);byCode.set(r.c,a)}
+    for(const a of byCode.values())a.sort((x,y)=>(x.p||0)-(y.p||0));
+    loaded=true;
+    $("pricesMeta").textContent="מחירים מעודכנים ל-"+String(j.updated||"").split("-").reverse().join(".")+" · "+byKey.size.toLocaleString("he-IL")+" גרסאות קלפים";
+    renderList();
+  }).catch(()=>{$("pricesMeta").textContent="לא הצלחתי לטעון את המחירים. בדוק חיבור לאינטרנט ורענן."});
+
+  // ---------- search ----------
+  function showVariants(code){
+    const list=$("results"); list.textContent="";
+    if(!loaded){status("searchStatus","המחירים עוד נטענים. נסה שוב בעוד רגע.");return}
+    const v=byCode.get(code)||[];
+    if(!v.length){status("searchStatus",'לא מצאתי את הקוד "'+code+'". בדוק שהוא נכון (למשל OP02-004). קלפי פרומו עדיין לא ברשימה.',true);return}
+    status("searchStatus", v.length===1?"נמצאה גרסה אחת.":"יש "+v.length+" גרסאות. בחר את זו שנראית כמו הקלף שלך (לחיצה על תמונה מגדילה).");
+    for(const r of v){
+      const li=el("li","item");
+      const info=el("div","info"); info.append(document.createTextNode(r.s+" · ")); info.append(el("span","tag",r.r||"?"));
+      if(daysOld(r.d)>7){info.append(document.createTextNode(" "));info.append(el("span","stale","מחיר מ-"+r.d))}
+      const acts=el("div","acts"); const add=el("button","btn primary","הוסף לאוסף"); add.type="button";
+      add.onclick=()=>{addCard(r);add.textContent="✓ נוסף";setTimeout(()=>{add.textContent="הוסף לאוסף"},1400)};
+      acts.append(add);
+      li.append(thumb(r.i,r.n),el("div","name",r.n),el("div","price num",fmt(r.p)),info,acts);
+      list.append(li);
+    }
+  }
+  $("codeForm").addEventListener("submit",e=>{e.preventDefault();const c=normCode($("codeIn").value);if(!c)return;$("codeIn").value=c;$("codeIn").blur();showVariants(c)});
+
+  // ---------- photo + OCR ----------
+  const CODE_RE=/([O0]P|ST|EB|PRB)\s?[O0-9]{2}\s?[-–—_.]?\s?[O0-9]{3}/;
+  function fixDigits(s){s=s.replace(/^0P/,"OP");return s.replace(/^(OP|ST|EB|PRB)/,"$1|").split("|").map((p,i)=>i?p.replace(/O/g,"0"):p).join("")}
+  function toCanvas(img, crop){
+    const sw=img.naturalWidth, sh=img.naturalHeight;
+    const sx=crop?Math.round(sw*0.35):0, sy=crop?Math.round(sh*0.62):0, cw=sw-sx, ch=sh-sy;
+    const scale=Math.min(1, 1800/Math.max(cw,ch))*(crop?1.6:1);
+    const c=document.createElement("canvas"); c.width=Math.round(cw*scale); c.height=Math.round(ch*scale);
+    const x=c.getContext("2d"); x.filter="grayscale(1) contrast(1.6)"; x.drawImage(img,sx,sy,cw,ch,0,0,c.width,c.height);
+    return c;
+  }
+  let workerP=null;
+  function getWorker(){
+    if(!workerP) workerP=Tesseract.createWorker("eng").then(async w=>{await w.setParameters({tessedit_char_whitelist:"OPSTEBR0123456789-"});return w});
+    return workerP;
+  }
+  $("photo").addEventListener("change",async()=>{
+    const f=$("photo").files&&$("photo").files[0]; $("photo").value=""; if(!f)return;
+    const url=URL.createObjectURL(f); $("photoImg").src=url; $("photoBox").hidden=false;
+    $("results").textContent=""; status("searchStatus","");
+    if(!window.Tesseract){status("ocrStatus","קריאת הקוד לא נטענה. הקלד את הקוד מהפינה של הקלף.",true);return}
+    status("ocrStatus","קורא את הקוד מהתמונה… (בפעם הראשונה זה לוקח כמה שניות)");
+    try{
+      const img=new Image(); img.src=url; await img.decode();
+      const w=await getWorker(); let found="";
+      for(const crop of [true,false]){
+        const {data}=await w.recognize(toCanvas(img,crop));
+        const m=String(data.text||"").toUpperCase().replace(/\s+/g," ").match(CODE_RE);
+        if(m){found=normCode(fixDigits(m[0].replace(/[\s–—_.]/g,"-").replace(/-+/g,"-")));break}
+      }
+      if(found){$("codeIn").value=found;status("ocrStatus","זוהה הקוד "+found+". אם הוא לא נכון, תקן אותו ולחץ חפש.");showVariants(found)}
+      else status("ocrStatus","לא הצלחתי לקרוא את הקוד. צלם קרוב יותר לפינה התחתונה, או הקלד אותו.",true);
+    }catch(e){status("ocrStatus","קריאת הקוד נכשלה. הקלד את הקוד מהפינה של הקלף.",true)}
+  });
+
+  // ---------- collection ----------
+  function priceOf(it){const r=byKey.get(it.key);return r?Number(r.p)||0:Number(it.priceAtAdd)||0}
+  function addCard(r){
+    const ex=items.find(x=>x.key===r.k);
+    if(ex) ex.qty=(Number(ex.qty)||1)+1;
+    else items.push({key:r.k,code:r.c,name:r.n,set:r.s,rarity:r.r,img:r.i,qty:1,priceAtAdd:r.p,addedAt:new Date().toISOString()});
+    save(); renderList();
+  }
+  function changeQty(it,d){it.qty=(Number(it.qty)||1)+d;if(it.qty<=0)items=items.filter(x=>x!==it);save();renderList()}
+  function renderList(){
+    const list=$("list"); list.textContent=""; let total=0,count=0;
+    const rows=items.map(it=>({it,p:priceOf(it)})).sort((a,b)=>b.p*(b.it.qty||1)-a.p*(a.it.qty||1));
+    for(const {it,p} of rows){
+      const q=Number(it.qty)||1; total+=p*q; count+=q;
+      const r=byKey.get(it.key);
+      const li=el("li","item small");
+      const info=el("div","info"); info.append(document.createTextNode(String(it.code||"")+" · "+String(it.set||"")+" · "));
+      info.append(el("span","tag",String(it.rarity||"?"))); info.append(document.createTextNode(" · "+fmt(p)+" ליחידה"));
+      if(loaded&&!r) info.append(el("span","stale"," · אין מחיר עדכני"));
+      const acts=el("div","acts"), qty=el("span","qty");
+      const minus=el("button","btn","−"); minus.type="button"; minus.setAttribute("aria-label","הורד אחד"); minus.onclick=()=>changeQty(it,-1);
+      const plus=el("button","btn","+"); plus.type="button"; plus.setAttribute("aria-label","הוסף אחד"); plus.onclick=()=>changeQty(it,1);
+      qty.append(minus,el("span","num","×"+q),plus); acts.append(qty);
+      li.append(thumb((r&&r.i)||it.img,it.name),el("div","name",String(it.name||"")),el("div","price num",fmt(p*q)),info,acts);
+      list.append(li);
+    }
+    if(!rows.length) list.append(el("li","empty","כאן יופיעו הקלפים שתוסיף. צלם קלף או הקלד קוד כדי להתחיל."));
+    $("totalVal").textContent=fmt(total);
+    $("totalSub").textContent=count?(count+" קלפים · "+rows.length+" שונים"):"האוסף ריק";
+  }
+
+  // ---------- backup ----------
+  $("exportBtn").onclick=()=>{
+    const blob=new Blob([JSON.stringify({app:"onepiece-collection",version:1,saved:new Date().toISOString(),items},null,1)],{type:"application/json"});
+    const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="onepiece-collection-"+new Date().toISOString().slice(0,10)+".json";
+    document.body.append(a); a.click(); a.remove(); status("backupStatus","קובץ הגיבוי נוצר.");
+  };
+  $("importIn").addEventListener("change",async()=>{
+    const f=$("importIn").files&&$("importIn").files[0]; $("importIn").value=""; if(!f)return;
+    try{const j=JSON.parse(await f.text()); const arr=Array.isArray(j)?j:j.items; if(!Array.isArray(arr))throw 0;
+      items=arr.filter(x=>x&&typeof x.key==="string").map(x=>({...x,qty:Math.max(1,Number(x.qty)||1)})); save(); renderList();
+      status("backupStatus","שוחזרו "+items.length+" קלפים מהקובץ.");
+    }catch(e){status("backupStatus","הקובץ לא נקרא. בחר קובץ גיבוי שנוצר מהאתר הזה.",true)}
+  });
+
+  renderList();
+})();
+</script>
+</body>
+</html>
